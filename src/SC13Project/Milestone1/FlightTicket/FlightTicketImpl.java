@@ -10,6 +10,8 @@ public class FlightTicketImpl implements BookingFlightWS {
 	public List<FlightInfo> getFlightInfo(String departure, String destination,
 			FlightTicketDate date) {
 		// TODO Auto-generated method stub
+		int a;
+		a = 1;
 		return null;
 	}
 
