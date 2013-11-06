@@ -37,6 +37,7 @@ import javax.xml.bind.annotation.XmlType;
  * 
  */
 //chris comment here
+//chris second comment here
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "BookingInfo", propOrder = {
     "bookingID",
