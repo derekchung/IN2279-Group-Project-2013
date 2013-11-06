@@ -4,6 +4,7 @@ import java.util.List;
 
 //Please do not change the name of the package or this interface
 //Please add here your implementation
+//chris comment
 public class HotelReservationImpl implements HotelReservationWS{
 
 	@Override
