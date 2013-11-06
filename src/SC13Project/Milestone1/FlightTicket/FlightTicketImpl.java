@@ -11,7 +11,7 @@ public class FlightTicketImpl implements BookingFlightWS {
 			FlightTicketDate date) {
 		// TODO Auto-generated method stub
 		int a;
-		a = 1;
+		a = 2;
 		return null;
 	}
 
