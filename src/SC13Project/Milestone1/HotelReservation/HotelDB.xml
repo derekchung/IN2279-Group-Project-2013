@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tns:hotel xmlns:tns="http://www.example.org/HotelDB" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.example.org/HotelDB HotelDB.xsd ">
+  <tns:rooms>
+    <tns:room>
+      <tns:type>tns:type</tns:type>
+      <tns:totalAmount>0</tns:totalAmount>
+      <tns:rate>0</tns:rate>
+    </tns:room>
+  </tns:rooms>
+  <tns:bookings>
+    <tns:booking>
+      <tns:bookingID>tns:bookingID</tns:bookingID>
+      <tns:type>tns:type</tns:type>
+      <tns:amount>0</tns:amount>
+      <tns:stayPeriod>
+        <tns:checkin>
+          <tns:year>0</tns:year>
+          <tns:month>0</tns:month>
+          <tns:date>0</tns:date>
+        </tns:checkin>
+        <tns:checkout>
+          <tns:year>0</tns:year>
+          <tns:month>0</tns:month>
+          <tns:date>0</tns:date>
+        </tns:checkout>
+      </tns:stayPeriod>
+    </tns:booking>
+  </tns:bookings>
+</tns:hotel>

@@ -2,15 +2,20 @@ package SC13Project.Milestone1.HotelReservation;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.TimeZone;
 
 import javax.xml.bind.*;
 
 import SC13Project.Milestone1.HotelReservation.Database.BookingInfo;
+import SC13Project.Milestone1.HotelReservation.Database.BookingList;
 import SC13Project.Milestone1.HotelReservation.Database.HotelInfo;
 import SC13Project.Milestone1.HotelReservation.Database.ObjectFactory;
+import SC13Project.Milestone1.HotelReservation.Database.ReservationDateInfo;
+import SC13Project.Milestone1.HotelReservation.Database.StayPeriodType;
 
 //Please do not change the name of the package or this interface
 //Please add here your implementation
@@ -200,19 +205,19 @@ public class HotelReservationImpl implements HotelReservationWS{
 	throws UnAvailableException {
 		
 		String packageName=HotelInfo.class.getPackage().getName();
-
-		JAXBContext jc = JAXBContext.newInstance(packageName);
-		Unmarshaller u = jc.createUnmarshaller();
-		JAXBElement<HotelInfo> root = (JAXBElement<HotelInfo>)u.unmarshal(new FileInputStream(""));
-		HotelInfo hotel = root.getValue();
 		
-		// Marshell creation 
-		JAXBContext context=JAXBContext.newInstance(packageName);
-		Marshaller m=context.createMarshaller();
-		
-		Calendar calendar = 
+		long seconds = System.currentTimeMillis();
 		
 		try {
+			
+			JAXBContext jc = JAXBContext.newInstance(packageName);
+			Unmarshaller u = jc.createUnmarshaller();
+			JAXBElement<HotelInfo> root = (JAXBElement<HotelInfo>)u.unmarshal(new FileInputStream(""));
+			HotelInfo hotel = root.getValue();
+			
+			// Marshell creation 
+			JAXBContext context=JAXBContext.newInstance(packageName);
+			Marshaller m=context.createMarshaller();
 			
 			//get the list with available rooms
 			List <RoomInfo> availableRoom = new ArrayList<RoomInfo>();
@@ -228,11 +233,12 @@ public class HotelReservationImpl implements HotelReservationWS{
 						JAXBElement<HotelInfo> output= obf.createHotel(hotel);
 						BookingInfo temp = obf.createBookingInfo();
 						
+						temp.setBookingID( String.valueOf(seconds) + type + String.valueOf(amount) );
+						temp.setAmount(amount);
+						temp.setStayPeriod(this.convertStayPeriodToStayPeriodType(period));
+						List<BookingInfo> writingList = hotel.getBookings().getBooking();
+						writingList.add(temp);
 						
-						
-						temp.setBookingID();
-						hotel.getBookings().getBooking().add(temp);
-						hotel.setBookings(value);
 						m.marshal(output,new FileOutputStream("HotelDB.xml"));
 					}
 				}
@@ -244,6 +250,25 @@ public class HotelReservationImpl implements HotelReservationWS{
 		return null;
 	}
 
+	private StayPeriodType convertStayPeriodToStayPeriodType( StayPeriod x ){
+		
+		StayPeriodType temp = new StayPeriodType();
+		ReservationDateInfo checkin = new ReservationDateInfo();
+		ReservationDateInfo checkout = new ReservationDateInfo();
+		
+		checkin.setYear(x.getCheckin().getYear());
+		checkin.setMonth(x.getCheckin().getMonth());
+		checkin.setDate(x.getCheckin().getDate());
+		
+		checkout.setYear(x.getCheckout().getYear());
+		checkout.setMonth(x.getCheckout().getMonth());
+		checkout.setDate(x.getCheckout().getDate());
+		
+		temp.setCheckin(checkin);
+		temp.setCheckout(checkout);
+		
+		return temp;
+	}
 
 	@Override
 	public void cancelBooking(String bookingID) {
