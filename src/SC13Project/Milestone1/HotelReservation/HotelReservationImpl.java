@@ -7,7 +7,9 @@ import java.util.List;
 
 import javax.xml.bind.*;
 
+import SC13Project.Milestone1.HotelReservation.Database.BookingInfo;
 import SC13Project.Milestone1.HotelReservation.Database.HotelInfo;
+import SC13Project.Milestone1.HotelReservation.Database.ObjectFactory;
 
 //Please do not change the name of the package or this interface
 //Please add here your implementation
@@ -195,31 +197,37 @@ public class HotelReservationImpl implements HotelReservationWS{
 	@Override
 	public String bookRoom(String type, int amount, StayPeriod period)
 	throws UnAvailableException {
+		
 		String packageName=HotelInfo.class.getPackage().getName();
 
+		JAXBContext jc = JAXBContext.newInstance(packageName);
+		Unmarshaller u = jc.createUnmarshaller();
+		JAXBElement<HotelInfo> root = (JAXBElement<HotelInfo>)u.unmarshal(new FileInputStream(""));
+		HotelInfo hotel = root.getValue();
+		
+		// Marshell creation 
+		JAXBContext context=JAXBContext.newInstance(packageName);
+		Marshaller m=context.createMarshaller();
+		
 		try {
-			// Unmarshell creation 
-			JAXBContext jc=JAXBContext.newInstance(packageName);
-			Unmarshaller u=jc.createUnmarshaller();
-			// Marshell creation 
-			JAXBContext context=JAXBContext.newInstance(packageName);
-			Marshaller m=context.createMarshaller();
-			JAXBElement<HotelInfo>root= (JAXBElement<HotelInfo>)u.unmarshal(new FileInputStream("HotelDB.xml"));
-			HotelInfo hotel=root.getValue();
+			
 			//get the list with available rooms
 			List <RoomInfo> availableRoom = new ArrayList<RoomInfo>();
 			availableRoom=getAvailableRooms(period);
+			
 			//check if any of the available rooms fits
 			for(int i = 0; i < availableRoom.size(); i++){
 				if( availableRoom.get(i).getType().equals(type)){
-					if((availableRoom.get(i).getRate())<=(amount)){
-						availableRoom.get(i).setVacancies(i);
+					if( availableRoom.get(i).getVacancies() <= amount ){
+						availableRoom.get(i).setVacancies( availableRoom.get(i).getVacancies() - amount );
 						m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
-						//ObjectFactory obf=new ObjectFactory();
-						//JAXBElement<HotelInfo> output= obf.createHotel(hotel);
-						//JAXBElement<BookingInfo> output= obf.createBookingInfo();
-						//output.setValue(type);
-						//	m.marshal(output,new FileOutputStream("HotelDB.xml"));
+						ObjectFactory obf=new ObjectFactory();
+						JAXBElement<HotelInfo> output= obf.createHotel(hotel);
+						BookingInfo temp = obf.createBookingInfo();
+						temp.setBookingID();
+						hotel.getBookings().getBooking().add(e);
+						hotel.setBookings(value);
+						m.marshal(output,new FileOutputStream("HotelDB.xml"));
 					}
 				}
 			}
