@@ -3,6 +3,7 @@ package SC13Project.Milestone1.HotelReservation;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 
 import javax.xml.bind.*;
@@ -209,6 +210,8 @@ public class HotelReservationImpl implements HotelReservationWS{
 		JAXBContext context=JAXBContext.newInstance(packageName);
 		Marshaller m=context.createMarshaller();
 		
+		Calendar calendar = 
+		
 		try {
 			
 			//get the list with available rooms
@@ -224,8 +227,11 @@ public class HotelReservationImpl implements HotelReservationWS{
 						ObjectFactory obf=new ObjectFactory();
 						JAXBElement<HotelInfo> output= obf.createHotel(hotel);
 						BookingInfo temp = obf.createBookingInfo();
+						
+						
+						
 						temp.setBookingID();
-						hotel.getBookings().getBooking().add(e);
+						hotel.getBookings().getBooking().add(temp);
 						hotel.setBookings(value);
 						m.marshal(output,new FileOutputStream("HotelDB.xml"));
 					}
