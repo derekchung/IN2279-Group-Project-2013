@@ -3,6 +3,8 @@ package SC13Project.Milestone1.HotelReservation;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
@@ -136,11 +138,12 @@ public class HotelReservationImpl implements HotelReservationWS{
 		String packageName = HotelInfo.class.getPackage().getName();
 		List<RoomInfo> allRoomsInfo = new ArrayList<RoomInfo>();
 		List<RoomInfo> availableRoomsInfo = new ArrayList<RoomInfo>();
-		
+		Path test = Paths.get( System.getProperty("user.dir") + "/../datasource/ds_39_4.xml" );
+				
 		try {
 			JAXBContext jc = JAXBContext.newInstance(packageName);
 			Unmarshaller u = jc.createUnmarshaller();
-			JAXBElement<HotelInfo> root = (JAXBElement<HotelInfo>)u.unmarshal(new FileInputStream(""));
+			JAXBElement<HotelInfo> root = (JAXBElement<HotelInfo>)u.unmarshal(new FileInputStream(test.normalize().toString()));
 			HotelInfo hotel = root.getValue();
 			
 			List<SC13Project.Milestone1.HotelReservation.Database.RoomInfo> rooms = hotel.getRooms().getRoom();
@@ -205,14 +208,14 @@ public class HotelReservationImpl implements HotelReservationWS{
 	throws UnAvailableException {
 		
 		String packageName=HotelInfo.class.getPackage().getName();
-		
-		long seconds = System.currentTimeMillis();
+		String bookID;
+		Path test = Paths.get( System.getProperty("user.dir") + "/../datasource/ds_39_4.xml" );
 		
 		try {
 			
 			JAXBContext jc = JAXBContext.newInstance(packageName);
 			Unmarshaller u = jc.createUnmarshaller();
-			JAXBElement<HotelInfo> root = (JAXBElement<HotelInfo>)u.unmarshal(new FileInputStream(""));
+			JAXBElement<HotelInfo> root = (JAXBElement<HotelInfo>)u.unmarshal(new FileInputStream(test.normalize().toString()));
 			HotelInfo hotel = root.getValue();
 			
 			// Marshell creation 
@@ -222,27 +225,32 @@ public class HotelReservationImpl implements HotelReservationWS{
 			//get the list with available rooms
 			List <RoomInfo> availableRoom = new ArrayList<RoomInfo>();
 			availableRoom=getAvailableRooms(period);
-			
+
 			//check if any of the available rooms fits
-			for(int i = 0; i < availableRoom.size(); i++){
-				if( availableRoom.get(i).getType().equals(type)){
-					if( availableRoom.get(i).getVacancies() <= amount ){
-						availableRoom.get(i).setVacancies( availableRoom.get(i).getVacancies() - amount );
+			for (RoomInfo a : availableRoom){
+				if ( a.getType().equals(type) ){
+					if ( a.getVacancies() <= amount ) {
 						m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
-						ObjectFactory obf=new ObjectFactory();
+						ObjectFactory obf = new ObjectFactory();
 						JAXBElement<HotelInfo> output= obf.createHotel(hotel);
-						BookingInfo temp = obf.createBookingInfo();
 						
-						temp.setBookingID( String.valueOf(seconds) + type + String.valueOf(amount) );
+						BookingInfo temp = obf.createBookingInfo();
+						long seconds = System.currentTimeMillis();
+						bookID = String.valueOf(seconds) + type + String.valueOf(amount);
+						temp.setBookingID( bookID );
 						temp.setAmount(amount);
 						temp.setStayPeriod(this.convertStayPeriodToStayPeriodType(period));
 						List<BookingInfo> writingList = hotel.getBookings().getBooking();
 						writingList.add(temp);
 						
-						m.marshal(output,new FileOutputStream("HotelDB.xml"));
+						
+						
+						m.marshal(output,new FileOutputStream(test.normalize().toString()));
+						return bookID;
 					}
 				}
 			}
+			
 		} catch (FileNotFoundException | JAXBException e) {
 		// TODO Auto-generated catch block
 			e.printStackTrace();
