@@ -46,7 +46,7 @@ public class HotelReservationImpl implements HotelReservationWS{
 				if ( x.getCheckout().getDate() >= y.getCheckin().getDate() )
 					return false;
 			}
-		}
+		} 
 		
 		return true;
 	}
