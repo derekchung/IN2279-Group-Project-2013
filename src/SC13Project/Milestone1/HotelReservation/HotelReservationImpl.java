@@ -212,20 +212,20 @@ public class HotelReservationImpl implements HotelReservationWS{
 	@Override
 	public String bookRoom(String type, int amount, StayPeriod period)
 	throws UnAvailableException {
-		
+		ClassLoader cl = SC13Project.Milestone1.HotelReservation.Database.ObjectFactory.class.getClassLoader();
 		String packageName=HotelInfo.class.getPackage().getName();
 		String bookID;
 		Path test = Paths.get( System.getProperty("user.dir") + "/../datasource/ds_39_4.xml" );
 		
 		try {
 			
-			JAXBContext jc = JAXBContext.newInstance(packageName);
+			JAXBContext jc = JAXBContext.newInstance(packageName, cl);
 			Unmarshaller u = jc.createUnmarshaller();
 			JAXBElement<HotelInfo> root = (JAXBElement<HotelInfo>)u.unmarshal(new FileInputStream(test.normalize().toString()));
 			HotelInfo hotel = root.getValue();
 			
 			// Marshell creation 
-			JAXBContext context=JAXBContext.newInstance(packageName);
+			JAXBContext context=JAXBContext.newInstance(packageName, cl);
 			Marshaller m=context.createMarshaller();
 
 			//get the list with available rooms
@@ -288,19 +288,20 @@ public class HotelReservationImpl implements HotelReservationWS{
 	@Override
 	public void cancelBooking(String bookingID) {
 		// TODO Auto-generated method stub
+		ClassLoader cl = SC13Project.Milestone1.HotelReservation.Database.ObjectFactory.class.getClassLoader();
 		String packageName=HotelInfo.class.getPackage().getName();
 		Path test = Paths.get( System.getProperty("user.dir") + "/../datasource/ds_39_4.xml" );
 		boolean noThisBookingID = true;
 		
 		try {
 			
-			JAXBContext jc = JAXBContext.newInstance(packageName);
+			JAXBContext jc = JAXBContext.newInstance(packageName, cl);
 			Unmarshaller u = jc.createUnmarshaller();
 			JAXBElement<HotelInfo> root = (JAXBElement<HotelInfo>)u.unmarshal(new FileInputStream(test.normalize().toString()));
 			HotelInfo hotel = root.getValue();
 			
 			// Marshell creation 
-			JAXBContext context=JAXBContext.newInstance(packageName);
+			JAXBContext context=JAXBContext.newInstance(packageName, cl);
 			Marshaller m=context.createMarshaller();
 			
 			for ( BookingInfo b : hotel.getBookings().getBooking() ) {
