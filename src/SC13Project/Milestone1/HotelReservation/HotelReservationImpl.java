@@ -135,13 +135,14 @@ public class HotelReservationImpl implements HotelReservationWS{
 	@Override
 	public List<RoomInfo> getAvailableRooms(StayPeriod period) {
 		// TODO Auto-generated method stub
+		ClassLoader cl = SC13Project.Milestone1.HotelReservation.Database.ObjectFactory.class.getClassLoader();
 		String packageName = HotelInfo.class.getPackage().getName();
 		List<RoomInfo> allRoomsInfo = new ArrayList<RoomInfo>();
 		List<RoomInfo> availableRoomsInfo = new ArrayList<RoomInfo>();
 		Path test = Paths.get( System.getProperty("user.dir") + "/../datasource/ds_39_4.xml" );
 				
 		try {
-			JAXBContext jc = JAXBContext.newInstance(packageName);
+			JAXBContext jc = JAXBContext.newInstance(packageName, cl);
 			Unmarshaller u = jc.createUnmarshaller();
 			JAXBElement<HotelInfo> root = (JAXBElement<HotelInfo>)u.unmarshal(new FileInputStream(test.normalize().toString()));
 			HotelInfo hotel = root.getValue();
