@@ -24,7 +24,7 @@ import SC13Project.Milestone1.HotelReservation.Database.StayPeriodType;
 //chris comment
 public class HotelReservationImpl implements HotelReservationWS{
 
-	private boolean IsStayPeriodOverlap( StayPeriod x, StayPeriod y ) {
+/*	private boolean IsStayPeriodOverlap( StayPeriod x, StayPeriod y ) {
 		
 		if ( x.getCheckout().getYear() < y.getCheckin().getYear() ){
 			return false;
@@ -76,7 +76,7 @@ public class HotelReservationImpl implements HotelReservationWS{
 		}
 		
 		return true;
-	}
+	}*/
 	
 	private boolean IsStayPeriodOverlap( SC13Project.Milestone1.HotelReservation.Database.StayPeriodType x, SC13Project.Milestone1.HotelReservation.Database.StayPeriodType y ) {
 		
@@ -105,7 +105,7 @@ public class HotelReservationImpl implements HotelReservationWS{
 		return true;
 	}
 	
-	private boolean IsStayPeriodOverlap( StayPeriod x, SC13Project.Milestone1.HotelReservation.Database.StayPeriodType y ) {
+/*	private boolean IsStayPeriodOverlap( StayPeriod x, SC13Project.Milestone1.HotelReservation.Database.StayPeriodType y ) {
 		
 		if ( x.getCheckout().getYear() < y.getCheckin().getYear() ){
 			return false;
@@ -130,7 +130,7 @@ public class HotelReservationImpl implements HotelReservationWS{
 		}
 		
 		return true;
-	}
+	}*/
 	
 	@Override
 	public List<RoomInfo> getAvailableRooms(StayPeriod period) {
@@ -152,6 +152,7 @@ public class HotelReservationImpl implements HotelReservationWS{
 			for ( SC13Project.Milestone1.HotelReservation.Database.RoomInfo a : rooms ){
 				if ( allRoomsInfo.size() > 0 ) {
 					boolean cangonext = false;
+					
 					for ( RoomInfo b : allRoomsInfo ) {
 						if ( a.getType().equals(b.getType()) ) {
 							b.setVacancies(b.getVacancies() + a.getTotalAmount());
@@ -159,6 +160,7 @@ public class HotelReservationImpl implements HotelReservationWS{
 							break;
 						}
 					}
+					
 					if (!cangonext) {
 						RoomInfo temp = new RoomInfo();
 						temp.setType(a.getType());
@@ -177,12 +179,12 @@ public class HotelReservationImpl implements HotelReservationWS{
 			}
 			
 			if ( allRoomsInfo.size() == 0 )
-				return allRoomsInfo;
+				return null;
 			
 			for ( SC13Project.Milestone1.HotelReservation.Database.BookingInfo b : bookings) {
 				for ( RoomInfo a : allRoomsInfo ) {
 					if ( b.getType().equals(a.getType()) &&
-							IsStayPeriodOverlap(b.getStayPeriod(), period) ) {
+							IsStayPeriodOverlap(b.getStayPeriod(), convertStayPeriodToStayPeriodType(period)) ) {
 						a.setVacancies(a.getVacancies() - b.getAmount());
 					}
 				}
@@ -192,6 +194,9 @@ public class HotelReservationImpl implements HotelReservationWS{
 				if ( a.getVacancies() > 0 ) 
 					availableRoomsInfo.add(a);
 			}
+			
+			if ( availableRoomsInfo.size() == 0 )
+				return null;
 			
 			return availableRoomsInfo;
 			
@@ -221,15 +226,14 @@ public class HotelReservationImpl implements HotelReservationWS{
 			// Marshell creation 
 			JAXBContext context=JAXBContext.newInstance(packageName);
 			Marshaller m=context.createMarshaller();
-			
-			//get the list with available rooms
-			List <RoomInfo> availableRoom = new ArrayList<RoomInfo>();
-			availableRoom=getAvailableRooms(period);
 
+			//get the list with available rooms
+			List <RoomInfo> availableRoom = getAvailableRooms(period);
+			
 			//check if any of the available rooms fits
 			for (RoomInfo a : availableRoom){
 				if ( a.getType().equals(type) ){
-					if ( a.getVacancies() <= amount ) {
+					if ( a.getVacancies() >= amount ) {
 						m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
 						ObjectFactory obf = new ObjectFactory();
 						JAXBElement<HotelInfo> output= obf.createHotel(hotel);
@@ -240,16 +244,18 @@ public class HotelReservationImpl implements HotelReservationWS{
 						temp.setBookingID( bookID );
 						temp.setAmount(amount);
 						temp.setStayPeriod(this.convertStayPeriodToStayPeriodType(period));
-						List<BookingInfo> writingList = hotel.getBookings().getBooking();
-						writingList.add(temp);
-						
-						
+						temp.setType(type);
+						//List<BookingInfo> writingList = hotel.getBookings().getBooking();
+						hotel.getBookings().getBooking().add(temp);
+						//writingList.add(temp);
 						
 						m.marshal(output,new FileOutputStream(test.normalize().toString()));
 						return bookID;
 					}
 				}
 			}
+			
+			throw new UnAvailableException();
 			
 		} catch (FileNotFoundException | JAXBException e) {
 		// TODO Auto-generated catch block
@@ -281,6 +287,43 @@ public class HotelReservationImpl implements HotelReservationWS{
 	@Override
 	public void cancelBooking(String bookingID) {
 		// TODO Auto-generated method stub
+		String packageName=HotelInfo.class.getPackage().getName();
+		Path test = Paths.get( System.getProperty("user.dir") + "/../datasource/ds_39_4.xml" );
+		boolean noThisBookingID = true;
+		
+		try {
+			
+			JAXBContext jc = JAXBContext.newInstance(packageName);
+			Unmarshaller u = jc.createUnmarshaller();
+			JAXBElement<HotelInfo> root = (JAXBElement<HotelInfo>)u.unmarshal(new FileInputStream(test.normalize().toString()));
+			HotelInfo hotel = root.getValue();
+			
+			// Marshell creation 
+			JAXBContext context=JAXBContext.newInstance(packageName);
+			Marshaller m=context.createMarshaller();
+			
+			for ( BookingInfo b : hotel.getBookings().getBooking() ) {
+				if ( b.getBookingID().equals(bookingID) ) {
+					hotel.getBookings().getBooking().remove(b);
+					noThisBookingID = false;
+					break;
+				}
+			}
+			
+			if ( noThisBookingID )
+				return;
+			
+			m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
+			ObjectFactory obf = new ObjectFactory();
+			JAXBElement<HotelInfo> output= obf.createHotel(hotel);
+			
+			m.marshal(output,new FileOutputStream(test.normalize().toString()));
+		
+		} catch (FileNotFoundException | JAXBException e) {
+		// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
 		
 	}
 
