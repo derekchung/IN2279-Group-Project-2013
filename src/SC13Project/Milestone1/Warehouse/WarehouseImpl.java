@@ -2,6 +2,7 @@ package SC13Project.Milestone1.Warehouse;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -10,7 +11,13 @@ import java.util.List;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
+import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
+
+import SC13Project.Milestone1.Warehouse.Database.ObjectFactory;
+import SC13Project.Milestone1.Warehouse.Database.ItemInfo;
+import SC13Project.Milestone1.Warehouse.Database.WareHouse;
+import SC13Project.Milestone1.Warehouse.Database.HoldingRequestInfo;
 
 //Please do not change the name of the package or this interface
 //Please add here your implementation
@@ -19,90 +26,151 @@ public class WarehouseImpl implements WarehouseWS {
 	@Override
 	public int query(String resourceID) {
 		// TODO Auto-generated method stub
-		String packageName = HotelInfo.class.getPackage().getName();
-		List<RoomInfo> allRoomsInfo = new ArrayList<RoomInfo>();
-		List<RoomInfo> availableRoomsInfo = new ArrayList<RoomInfo>();
-		Path test = Paths.get( System.getProperty("user.dir") + "/../datasource/ds_39_4.xml" );
-				
+		ClassLoader cl = SC13Project.Milestone1.Warehouse.Database.ObjectFactory.class.getClassLoader();
+		String packageName = WareHouse.class.getPackage().getName();
+		Path test = Paths.get( System.getProperty("user.dir") + "/../datasource/ds_39_2.xml" );
+		
 		try {
-			JAXBContext jc = JAXBContext.newInstance(packageName);
+			JAXBContext jc = JAXBContext.newInstance(packageName, cl);
 			Unmarshaller u = jc.createUnmarshaller();
-			JAXBElement<HotelInfo> root = (JAXBElement<HotelInfo>)u.unmarshal(new FileInputStream(test.normalize().toString()));
-			HotelInfo hotel = root.getValue();
+			JAXBElement<WareHouse> root = (JAXBElement<WareHouse>)u.unmarshal(new FileInputStream(test.normalize().toString()));
+			WareHouse wareHouse = root.getValue();
 			
-			List<SC13Project.Milestone1.HotelReservation.Database.RoomInfo> rooms = hotel.getRooms().getRoom();
-			List<SC13Project.Milestone1.HotelReservation.Database.BookingInfo> bookings = hotel.getBookings().getBooking();
 			
-			for ( SC13Project.Milestone1.HotelReservation.Database.RoomInfo a : rooms ){
-				if ( allRoomsInfo.size() > 0 ) {
-					boolean cangonext = false;
-					
-					for ( RoomInfo b : allRoomsInfo ) {
-						if ( a.getType().equals(b.getType()) ) {
-							b.setVacancies(b.getVacancies() + a.getTotalAmount());
-							cangonext = true;
-							break;
+			for ( ItemInfo i : wareHouse.getItems().getItem() ){
+					if ( i.getResourceID().equals(resourceID) ) {
+						int amount = i.getAmount();
+						for ( HoldingRequestInfo h : wareHouse.getHoldingRequests().getRequest() ) {
+							if ( h.getItem().getResourceID().equals(resourceID) ) {
+								amount -= h.getItem().getAmount();
+								if ( amount <= 0 )
+									return 0;
+							}
 						}
+						return amount;
 					}
-					
-					if (!cangonext) {
-						RoomInfo temp = new RoomInfo();
-						temp.setType(a.getType());
-						temp.setRate(a.getRate());
-						temp.setVacancies(a.getTotalAmount());
-						allRoomsInfo.add(temp);
-					}
-				}
-				else {
-					RoomInfo temp = new RoomInfo();
-					temp.setType(a.getType());
-					temp.setRate(a.getRate());
-					temp.setVacancies(a.getTotalAmount());
-					allRoomsInfo.add(temp);
-				}
 			}
 			
-			if ( allRoomsInfo.size() == 0 )
-				return null;
-			
-			for ( SC13Project.Milestone1.HotelReservation.Database.BookingInfo b : bookings) {
-				for ( RoomInfo a : allRoomsInfo ) {
-					if ( b.getType().equals(a.getType()) &&
-							IsStayPeriodOverlap(b.getStayPeriod(), convertStayPeriodToStayPeriodType(period)) ) {
-						a.setVacancies(a.getVacancies() - b.getAmount());
-					}
-				}
-			}
-			
-			for ( RoomInfo a : allRoomsInfo ){
-				if ( a.getVacancies() > 0 ) 
-					availableRoomsInfo.add(a);
-			}
-			
-			if ( availableRoomsInfo.size() == 0 )
-				return null;
-			
-			return availableRoomsInfo;
-			
-		} catch (JAXBException | FileNotFoundException e) {
+		} catch (JAXBException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();			
 		}
 		
-		return 0;
+		return -1;
 	}
 
 	@Override
 	public boolean pickupItems(String resourceID, int amount)
 			throws NotEnoughItemException {
 		// TODO Auto-generated method stub
+		
+		int q = this.query(resourceID);
+		
+		if ( q == -1 ) {
+			return false;
+		}
+		else if ( q < amount ) {
+			throw new NotEnoughItemException();
+		} else {
+			ClassLoader cl = SC13Project.Milestone1.Warehouse.Database.ObjectFactory.class.getClassLoader();
+			String packageName = WareHouse.class.getPackage().getName();
+			Path test = Paths.get( System.getProperty("user.dir") + "/../datasource/ds_39_2.xml" );
+			
+			
+			JAXBContext jc = null;
+			
+			try {
+				jc = JAXBContext.newInstance(packageName, cl);
+				Unmarshaller u = jc.createUnmarshaller();
+				JAXBElement<WareHouse> root = (JAXBElement<WareHouse>)u.unmarshal(new FileInputStream(test.normalize().toString()));
+				WareHouse wareHouse = root.getValue();
+				
+				// Marshell creation 
+				JAXBContext context=JAXBContext.newInstance(packageName, cl);
+				Marshaller m=context.createMarshaller();
+				
+				for ( ItemInfo i : wareHouse.getItems().getItem()) {
+					if ( i.getResourceID().equals(resourceID) ) {
+						if ( i.getAmount() - amount > 0 )
+							i.setAmount(i.getAmount() - amount);
+						else
+							wareHouse.getItems().getItem().remove(i);
+						
+						break;
+					}
+				}
+				
+				m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
+				ObjectFactory obf = new ObjectFactory();
+				JAXBElement<WareHouse> output= obf.createWarehouse(wareHouse);
+				
+				m.marshal(output,new FileOutputStream(test.normalize().toString()));
+				
+				return true;
+				
+			} catch (JAXBException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (FileNotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		
 		return false;
 	}
 
 	@Override
 	public int complementStock(String resourceID, int amount) {
 		// TODO Auto-generated method stub
-		return 0;
+		ClassLoader cl = SC13Project.Milestone1.Warehouse.Database.ObjectFactory.class.getClassLoader();
+		String packageName = WareHouse.class.getPackage().getName();
+		Path test = Paths.get( System.getProperty("user.dir") + "/../datasource/ds_39_2.xml" );
+		
+		
+		JAXBContext jc = null;
+		
+		try {
+			jc = JAXBContext.newInstance(packageName, cl);
+			Unmarshaller u = jc.createUnmarshaller();
+			JAXBElement<WareHouse> root = (JAXBElement<WareHouse>)u.unmarshal(new FileInputStream(test.normalize().toString()));
+			WareHouse wareHouse = root.getValue();
+
+			// Marshell creation 
+			JAXBContext context=JAXBContext.newInstance(packageName, cl);
+			Marshaller m=context.createMarshaller();
+			
+			m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
+			ObjectFactory obf = new ObjectFactory();
+			JAXBElement<WareHouse> output= obf.createWarehouse(wareHouse);
+			
+			for ( ItemInfo i : wareHouse.getItems().getItem()) {
+				if ( i.getResourceID().equals(resourceID) ) {
+					i.setAmount(i.getAmount() + amount);
+					m.marshal(output,new FileOutputStream(test.normalize().toString()));
+					return i.getAmount();
+				}
+			}
+			
+			ItemInfo temp = obf.createItemInfo();
+			temp.setResourceID(resourceID);
+			temp.setAmount(amount);
+			
+			m.marshal(output,new FileOutputStream(test.normalize().toString()));
+			
+			return amount;
+			
+		} catch (JAXBException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return -1;
 	}
 
 	@Override
