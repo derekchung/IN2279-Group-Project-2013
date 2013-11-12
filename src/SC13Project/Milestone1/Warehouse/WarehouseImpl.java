@@ -145,10 +145,11 @@ public class WarehouseImpl implements WarehouseWS {
 			
 			m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
 			ObjectFactory obf = new ObjectFactory();
-			JAXBElement<WareHouse> output= obf.createWarehouse(wareHouse);
+
 			
 			for ( ItemInfo i : wareHouse.getItems().getItem()) {
 				if ( i.getResourceID().equals(resourceID) ) {
+					JAXBElement<WareHouse> output= obf.createWarehouse(wareHouse);
 					i.setAmount(i.getAmount() + amount);
 					m.marshal(output,new FileOutputStream(test.normalize().toString()));
 					return i.getAmount();
@@ -159,6 +160,9 @@ public class WarehouseImpl implements WarehouseWS {
 			temp.setResourceID(resourceID);
 			temp.setAmount(amount);
 			
+			wareHouse.getItems().getItem().add(temp);
+			
+			JAXBElement<WareHouse> output= obf.createWarehouse(wareHouse);
 			m.marshal(output,new FileOutputStream(test.normalize().toString()));
 			
 			return amount;
@@ -213,6 +217,8 @@ public class WarehouseImpl implements WarehouseWS {
 				
 				temp.setRequestID(requestID);
 				temp.setItem(tempItem);
+				
+				wareHouse.getHoldingRequests().getRequest().add(temp);
 				
 				m.marshal(output,new FileOutputStream(test.normalize().toString()));
 				
@@ -311,6 +317,7 @@ public class WarehouseImpl implements WarehouseWS {
 								wareHouse.getItems().getItem().remove(i);
 							
 							wareHouse.getHoldingRequests().getRequest().remove(h);
+							m.marshal(output,new FileOutputStream(test.normalize().toString()));
 							return true;
 						}		
 					}
