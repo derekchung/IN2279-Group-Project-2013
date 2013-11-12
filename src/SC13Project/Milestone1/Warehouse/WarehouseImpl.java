@@ -177,6 +177,56 @@ public class WarehouseImpl implements WarehouseWS {
 	public String holdItems(String resourceID, int amount)
 			throws NotEnoughItemException {
 		// TODO Auto-generated method stub
+		
+		int q = this.query(resourceID);
+		
+		if ( q < amount ) {
+			throw new NotEnoughItemException();
+		} else {
+			ClassLoader cl = SC13Project.Milestone1.Warehouse.Database.ObjectFactory.class.getClassLoader();
+			String packageName = WareHouse.class.getPackage().getName();
+			Path test = Paths.get( System.getProperty("user.dir") + "/../datasource/ds_39_2.xml" );
+			
+			JAXBContext jc = null;
+			
+			try {
+				jc = JAXBContext.newInstance(packageName, cl);
+				Unmarshaller u = jc.createUnmarshaller();
+				JAXBElement<WareHouse> root = (JAXBElement<WareHouse>)u.unmarshal(new FileInputStream(test.normalize().toString()));
+				WareHouse wareHouse = root.getValue();
+				
+				// Marshell creation 
+				JAXBContext context=JAXBContext.newInstance(packageName, cl);
+				Marshaller m=context.createMarshaller();
+				
+				String requestID = String.valueOf(System.currentTimeMillis()) + resourceID;
+				
+				m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
+				ObjectFactory obf = new ObjectFactory();
+				JAXBElement<WareHouse> output= obf.createWarehouse(wareHouse);
+				
+				HoldingRequestInfo temp = obf.createHoldingRequestInfo();
+				ItemInfo tempItem = obf.createItemInfo();
+				
+				tempItem.setResourceID(resourceID);
+				tempItem.setAmount(amount);
+				
+				temp.setRequestID(requestID);
+				temp.setItem(tempItem);
+				
+				m.marshal(output,new FileOutputStream(test.normalize().toString()));
+				
+				return requestID;
+				
+			} catch (JAXBException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (FileNotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		
 		return null;
 	}
 
@@ -184,12 +234,98 @@ public class WarehouseImpl implements WarehouseWS {
 	public void cancelHoldingItems(String holdingID) {
 		// TODO Auto-generated method stub
 		
+		ClassLoader cl = SC13Project.Milestone1.Warehouse.Database.ObjectFactory.class.getClassLoader();
+		String packageName = WareHouse.class.getPackage().getName();
+		Path test = Paths.get( System.getProperty("user.dir") + "/../datasource/ds_39_2.xml" );
+		
+		JAXBContext jc = null;
+		
+		try {
+			jc = JAXBContext.newInstance(packageName, cl);
+			Unmarshaller u = jc.createUnmarshaller();
+			JAXBElement<WareHouse> root = (JAXBElement<WareHouse>)u.unmarshal(new FileInputStream(test.normalize().toString()));
+			WareHouse wareHouse = root.getValue();
+			
+			// Marshell creation 
+			JAXBContext context=JAXBContext.newInstance(packageName, cl);
+			Marshaller m=context.createMarshaller();
+			
+			m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
+			ObjectFactory obf = new ObjectFactory();
+			JAXBElement<WareHouse> output= obf.createWarehouse(wareHouse);
+			
+			for ( HoldingRequestInfo h : wareHouse.getHoldingRequests().getRequest() ) {
+				if ( h.getRequestID().equals(holdingID) ) {
+					wareHouse.getHoldingRequests().getRequest().remove(h);
+					m.marshal(output,new FileOutputStream(test.normalize().toString()));		
+					return;
+				}
+			}
+			
+		} catch (JAXBException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	@Override
 	public boolean pickupHoldingItems(String holdingID)
 			throws InvalidHoldingIDException {
 		// TODO Auto-generated method stub
+		
+		ClassLoader cl = SC13Project.Milestone1.Warehouse.Database.ObjectFactory.class.getClassLoader();
+		String packageName = WareHouse.class.getPackage().getName();
+		Path test = Paths.get( System.getProperty("user.dir") + "/../datasource/ds_39_2.xml" );
+		JAXBContext jc = null;
+		
+		try {
+			jc = JAXBContext.newInstance(packageName, cl);
+			Unmarshaller u = jc.createUnmarshaller();
+			JAXBElement<WareHouse> root = (JAXBElement<WareHouse>)u.unmarshal(new FileInputStream(test.normalize().toString()));
+			WareHouse wareHouse = root.getValue();
+			
+			// Marshell creation 
+			JAXBContext context=JAXBContext.newInstance(packageName, cl);
+			Marshaller m=context.createMarshaller();
+			
+			m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
+			ObjectFactory obf = new ObjectFactory();
+			JAXBElement<WareHouse> output= obf.createWarehouse(wareHouse);
+			
+			for ( HoldingRequestInfo h : wareHouse.getHoldingRequests().getRequest() ) {
+			
+				if ( h.getRequestID().equals(holdingID) ) {
+					for ( ItemInfo i : wareHouse.getItems().getItem() ) {
+						
+						if ( i.getResourceID().equals(h.getItem().getResourceID()) ) {
+							
+							if ( i.getAmount() < h.getItem().getAmount() )
+								return false;
+							
+							i.setAmount(i.getAmount() - h.getItem().getAmount());
+							
+							if ( i.getAmount() == 0 )
+								wareHouse.getItems().getItem().remove(i);
+							
+							wareHouse.getHoldingRequests().getRequest().remove(h);
+							return true;
+						}		
+					}
+				}
+			}
+			
+			throw new InvalidHoldingIDException();
+			
+		} catch (JAXBException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		return false;
 	}
 
