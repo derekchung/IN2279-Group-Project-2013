@@ -97,7 +97,7 @@ public class HotelReservationImpl implements HotelReservationWS{
 			if ( x.getCheckin().getMonth() > y.getCheckout().getMonth() ) {
 				return false;
 			} else if ( x.getCheckin().getMonth() == y.getCheckout().getMonth() ) {
-				if ( x.getCheckout().getDate() >= y.getCheckin().getDate() )
+				if ( x.getCheckin().getDate() >= y.getCheckout().getDate() )
 					return false;
 			}
 		}
